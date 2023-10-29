@@ -11,10 +11,6 @@ from PIL import Image
 # Page Title
 ######################
 
-image = Image.open('dna-logo.jpg')
-
-st.image(image, use_column_width=True)
-
 st.write("""
 # Bacterial rRNA Modification Sites Finder
 
