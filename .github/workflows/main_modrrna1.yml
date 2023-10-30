@@ -64,4 +64,4 @@ jobs:
         with:
           app-name: 'ModrRNA1'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E39C575AF26D405E9A617DE80AEBF8B5 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_277BBB87986945708401AB6703BF4248 }}
