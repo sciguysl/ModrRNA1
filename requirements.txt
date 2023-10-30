@@ -4,3 +4,4 @@ biopython
 seaborn
 dna_features_viewer
 requests
+ete3
