@@ -1,2 +1,8 @@
 pandas
 streamlit
+hashgen
+biopython
+seaborn
+dna_features_viewer
+requests
+pickle
