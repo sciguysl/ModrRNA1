@@ -10,7 +10,7 @@ import streamlit as st
 ######################
 
 st.write("""
-# Bacterial rRNA Modification Sites Find
+# Bacterial rRNA Modification Sites Finderrr
 
 This app detecs the rRNA modification sites of any bacteria
 
