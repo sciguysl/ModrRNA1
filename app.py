@@ -139,67 +139,10 @@ if submit_button:
 from Bio import pairwise2
 from Bio.pairwise2 import format_alignment
 
-seqs = df_mods['Seq']
-
-aligner = pairwise2.align.localms
-high_conf_df = pd.DataFrame(columns=['Align', 'Desc', 'Score', 'Start', 'Enzyme', 'Mod', 'Mod2', 'ID'])
-low_conf_df = pd.DataFrame(columns=['Align', 'Desc', 'Score', 'Start', 'Enzyme', 'Mod', 'Mod2', 'ID'])
-i = 0
-# df_enz = pd.DataFrame(columns=["Enz", "Seq"])
-
-
-if sequence=="":
-    sys.exit()
-else:
-    try:
-        modstatus = st.status("Finding consensus sites...", state="running", expanded=True)
-        for seq in seqs:
-          enzyme = df_mods.loc[df_mods['Seq'] == seq, 'Enzyme'].iloc[0]
-          mod = df_mods.loc[df_mods['Seq'] == seq, 'Mod'].iloc[0]
-          idnum = df_mods.loc[df_mods['Seq'] == seq, 'ID'].iloc[0]
-          for a in aligner(refseq, seq, 2, -1, -4, -1):
-            # df_enz.loc[len(df_enz.index)] = [enzyme, seq]
-            align_start = a[3]
-            align_score = a[2]
-            accuracy_score = round(align_score*100/(len(seq)*2), 2)
-            try:
-                if (refseq[align_start+20] == seq[20] and accuracy_score >= 60):
-            #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
-                  desc = accuracy_score
-                  new_row = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':align_start, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
-                  high_conf_df = pd.concat([new_row,high_conf_df.loc[:]]).reset_index(drop=True)
-            
-                elif (refseq[align_start+20] == seq[20] and (5 <= accuracy_score < 60)):
-            #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
-                  desc = accuracy_score
-                  new_row2 = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':align_start, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
-                  low_conf_df = pd.concat([new_row2,low_conf_df.loc[:]]).reset_index(drop=True)
-            except IndexError:
-                pass
-    except IndexError:
-        modstatus.update(label="No potential rRNA modification sites were found", state="error", expanded=False)
-        st.warning("No alignments could be found that suggests the presence of rRNA modification sites.")
-        sys.exit()
-
-
-# In[20]:
-#print(high_conf_df[['Start', 'Enzyme', 'Mod']])
-
-
-high_conf_df = high_conf_df.sort_values(by=['Score'], ascending=False)
-high_conf_df = high_conf_df.groupby(['Start', 'Mod2']).first()
-high_conf_df = high_conf_df.sort_values(by=['Score'], ascending=False)
-
-low_conf_df = low_conf_df.sort_values(by=['Score'], ascending=False)
-low_conf_df = low_conf_df.groupby(['Start', 'Mod2']).first()
-low_conf_df = low_conf_df.sort_values(by=['Score'], ascending=False)
-
-# In[21]:
-#print(high_conf_df[['Enzyme', 'Mod']])
-
 def format_alignment2(align1, align2, score, begin, end, full_sequences=False):
     align_begin = begin
     align_end = end
+    mod_position = 0
     start1 = start2 = ""
     start_m = begin  # Begin of match line (how many spaces to include)
     # For local alignments:
@@ -240,6 +183,7 @@ def format_alignment2(align1, align2, score, begin, end, full_sequences=False):
             m_line.append("{:^{width}}".format(" ", width=m_len))  # space
             continue
         if (a == b and int(start2)+ n-linecounts == 21):
+            mod_position = int(start1) + n-linecounts
             m_line.append("{:^{width}}".format("#", width=m_len))  # match
         elif (a == b):
             m_line.append("{:^{width}}".format("|", width=m_len))  # match
@@ -247,9 +191,77 @@ def format_alignment2(align1, align2, score, begin, end, full_sequences=False):
             m_line.append("{:^{width}}".format(" ", width=m_len))  # gap
         else:
             m_line.append("{:^{width}}".format(".", width=m_len))  # mismatch
-
     s2_line.append(f"\n  Score={score:g}\n")
-    return "\n".join(["".join(s1_line), "".join(m_line), "".join(s2_line)])
+#    return "\n".join(["".join(s1_line), "".join(m_line), "".join(s2_line)])
+    return mod_position
+
+
+seqs = df_mods['Seq']
+
+aligner = pairwise2.align.localms
+high_conf_df = pd.DataFrame(columns=['Align', 'Desc', 'Score', 'Start', 'Enzyme', 'Mod', 'Mod2', 'ID'])
+low_conf_df = pd.DataFrame(columns=['Align', 'Desc', 'Score', 'Start', 'Enzyme', 'Mod', 'Mod2', 'ID'])
+i = 0
+# df_enz = pd.DataFrame(columns=["Enz", "Seq"])
+
+if sequence=="":
+    sys.exit()
+else:
+    try:
+        modstatus = st.status("Finding consensus sites...", state="running", expanded=True)
+        for seq in seqs:
+          enzyme = df_mods.loc[df_mods['Seq'] == seq, 'Enzyme'].iloc[0]
+          mod = df_mods.loc[df_mods['Seq'] == seq, 'Mod'].iloc[0]
+          idnum = df_mods.loc[df_mods['Seq'] == seq, 'ID'].iloc[0]
+          for a in aligner(refseq, seq, 2, -1, -4, -1):
+            # df_enz.loc[len(df_enz.index)] = [enzyme, seq]
+            align_start = a[3]
+            align_score = a[2]
+            i = i+1
+            if int(format_alignment2(*a)) == 0:
+                pass
+            else:
+                mod_site = int(format_alignment2(*a))
+                accuracy_score = round(align_score*100/(len(seq)*2), 2)
+                try:
+                    if (refseq[mod_site-1] == seq[20] and accuracy_score >= 60):
+                #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
+                      desc = accuracy_score
+                      new_row = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':mod_site, 'ModSite':mod_site, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
+                      high_conf_df = pd.concat([new_row,high_conf_df.loc[:]]).reset_index(drop=True)
+                
+                    elif (refseq[align_start+20] == seq[20] and (5 <= accuracy_score < 60)):
+                #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
+                      desc = accuracy_score
+                      new_row2 = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':mod_site, 'ModSite':mod_site, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
+                      low_conf_df = pd.concat([new_row2,low_conf_df.loc[:]]).reset_index(drop=True)
+                except IndexError:
+                    pass
+    except IndexError:
+        modstatus.update(label="No potential rRNA modification sites were found", state="error", expanded=False)
+        st.warning("No alignments could be found that suggests the presence of rRNA modification sites.")
+        sys.exit()
+
+
+#st.write(high_conf_df[['Start','Score', 'Mod']])
+# In[20]:
+#print(high_conf_df[['Start', 'Enzyme', 'Mod']])
+
+
+high_conf_df = high_conf_df.sort_values(by=['Score'], ascending=False)
+high_conf_df = high_conf_df.groupby(['Start', 'Mod2']).first()
+high_conf_df = high_conf_df.sort_values(by=['Score'], ascending=False)
+
+low_conf_df = low_conf_df.sort_values(by=['Score'], ascending=False)
+low_conf_df = low_conf_df.groupby(['Start', 'Mod2']).first()
+low_conf_df = low_conf_df.sort_values(by=['Score'], ascending=False)
+
+
+#st.write(low_conf_df[['Score', 'Mod']])
+# In[21]:
+#print(high_conf_df[['Enzyme', 'Mod']])
+
+
 
 
 
@@ -272,8 +284,8 @@ def format_alignment2(align1, align2, score, begin, end, full_sequences=False):
 #        
 #        stdout.write = new_write
 #        yield
-
-
+#
+#
 #output = st.empty()
 #with st_capture(output.code):
 #    print("High Confidence Hits\n*************************\n")
@@ -337,7 +349,7 @@ else:
 high_conf_df_drop = high_conf_df.drop(high_conf_df.columns, axis=1)
 
 for i in high_conf_df.index:
-    mod_point = high_conf_df['Align'][i][3] + 21
+    mod_point = int(high_conf_df['ModSite'][i])
     mod_type = high_conf_df['Mod'][i]
     mod_id = high_conf_df['ID'][i]
     ac_score = high_conf_df['Score'][i]
@@ -470,7 +482,7 @@ with open("taxnames", 'r') as file:
 taxbact = [line.strip() for line in lines]
 
 for i in high_conf_df.index:
-    mod_point = high_conf_df['Align'][i][3] + 21
+    mod_point = int(high_conf_df['ModSite'][i])
     mod_type = high_conf_df['Mod'][i]
     mod_id = high_conf_df['ID'][i]
     modsbact.append(f"{mod_id} - {mod_type}({mod_point})")
@@ -780,7 +792,7 @@ st.write("""
 
 st.subheader('Protein BLAST')
 
-st.markdown(f"You can blastp any of these enzymes on ***{option1}*** genome(s). :red[(This may take a while.)]")
+st.markdown(f"You can BLAST any of these enzymes on ***{option1}*** genome(s). :red[(This may take a while.)]")
 
 
 with st.form(key='my_form3'):
@@ -790,9 +802,18 @@ with st.form(key='my_form3'):
        index=0,
        placeholder="Search the enzyme",
     )
+    left, col1, col2, col3, col4 = st.columns(5, gap="large")
+    with left:
+        option4 = st.selectbox(
+       "Which BLAST?",
+       (['blastp', 'tblastn']),
+       index=0,
+       placeholder="Search the enzyme",
+    )
     submit_button3 = st.form_submit_button(label='BLAST!')    
-    if option3:
+    if option3 and option4:
         enz_seq = result_enz.loc[result_enz['protein'] == option3, 'align_seq'].iloc[0]
+        blastop = option4
     else:
         sys.exit()
 #    enz = high_conf_df.loc[high_conf_df['ID'] == site, 'Enzyme']
@@ -800,7 +821,7 @@ with st.form(key='my_form3'):
 
 
 if enz_seq is not None and submit_button3:
-    st.caption("FoldSeek aligned sequence. If blast() is taking too long, please be kind enough use the below sequence to do a blastp yourself.")
+    st.caption("If blast() is taking too long, please be kind enough use the below sequence to do a BLAST yourself. FoldSeek aligned sequence:")
     st.code(enz_seq)
 
 
@@ -812,15 +833,18 @@ pdb_seq = enz_seq
 print("done")
 
 @st.cache_data    
-def blast(pdb_seq, taxid):
-    return NCBIWWW.qblast('blastp', 'nr', pdb_seq, entrez_query=f"txid{str(taxid)}[ORGN]")
+def blast(pdb_seq, taxid, blastop):
+    if blastop == 'tblastn':
+        return NCBIWWW.qblast('tblastn', 'nt', pdb_seq, entrez_query=f"txid{str(taxid)}[ORGN]")
+    else:
+        return NCBIWWW.qblast('blastp', 'nr', pdb_seq, entrez_query=f"txid{str(taxid)}[ORGN]")
 
 def delayed_print():
-    st.warning("If blast() is taking too much time, please use the above sequence to do a blastp yourself.")
+    st.warning("If blast() is taking too much time, please use the above sequence to do a BLAST yourself.")
 
 
 if enz_seq is not None and submit_button3:
-    result_handle = blast(pdb_seq, taxid)
+    result_handle = blast(pdb_seq, taxid, blastop)
 else:
     sys.exit()
     
@@ -837,7 +861,11 @@ for blast_record in blast_records:
                 st.write(f"{alignment.title}")
                 st.code(f"""{hsp}""")
                 accession = alignment.accession
-                st.write(f"<a href='https://www.ncbi.nlm.nih.gov/protein/{accession}' id='my-link'>{accession}</a>", unsafe_allow_html=True)  
+                if blastop == 'blastp':
+                    st.write(f"<a href='https://www.ncbi.nlm.nih.gov/protein/{accession}' id='my-link'>{accession}</a>", unsafe_allow_html=True)
+                elif blastop == 'tblastn':
+                    st.write(f"<a href='https://www.ncbi.nlm.nih.gov/nuccore/{accession}' id='my-link'>{accession}</a>", unsafe_allow_html=True)
+                    
 
 if hit == 0:
     st.warning(f"No matches found in {option1} genome")
