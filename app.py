@@ -25,6 +25,8 @@ css='''
 '''
 st.markdown(css, unsafe_allow_html=True)
 
+
+
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -54,7 +56,10 @@ st.markdown("""
 
 #image = Image.open('dna-logo.jpg')
 #
+
 st.image("https://i.ibb.co/WtKyPnk/Untitled-design-1.png", use_column_width=True)
+button_html = f'<a style="position: absolute; top: 0; right: 0;" href="mailto: uviwick@gmail.com" target="_blank">Report Errors</a>'
+st.markdown(button_html, unsafe_allow_html=True)
 
 st.write("""
 # Bacterial rRNA Modification Sites Finder
@@ -82,6 +87,7 @@ with st.form(key='my_form'):
     submit_button = st.form_submit_button(label='Submit')
     
 #sequence = st.sidebar.text_area("Sequence input", sequence_input, height=250)
+#st.code(sequence)
 
 
 st.write("""
@@ -156,19 +162,22 @@ else:
             align_start = a[3]
             align_score = a[2]
             accuracy_score = round(align_score*100/(len(seq)*2), 2)
-            if (refseq[align_start+20] == seq[20] and accuracy_score >= 60):
-        #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
-              desc = accuracy_score
-              new_row = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':align_start, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
-              high_conf_df = pd.concat([new_row,high_conf_df.loc[:]]).reset_index(drop=True)
-        
-            elif (refseq[align_start+20] == seq[20] and (5 <= accuracy_score < 60)):
-        #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
-              desc = accuracy_score
-              new_row2 = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':align_start, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
-              low_conf_df = pd.concat([new_row2,low_conf_df.loc[:]]).reset_index(drop=True)
+            try:
+                if (refseq[align_start+20] == seq[20] and accuracy_score >= 60):
+            #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
+                  desc = accuracy_score
+                  new_row = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':align_start, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
+                  high_conf_df = pd.concat([new_row,high_conf_df.loc[:]]).reset_index(drop=True)
+            
+                elif (refseq[align_start+20] == seq[20] and (5 <= accuracy_score < 60)):
+            #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
+                  desc = accuracy_score
+                  new_row2 = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':align_start, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
+                  low_conf_df = pd.concat([new_row2,low_conf_df.loc[:]]).reset_index(drop=True)
+            except IndexError:
+                pass
     except IndexError:
-        modstatus.update(label="No possible rRNA modification sites were found", state="error", expanded=False)
+        modstatus.update(label="No potential rRNA modification sites were found", state="error", expanded=False)
         st.warning("No alignments could be found that suggests the presence of rRNA modification sites.")
         sys.exit()
 
@@ -431,7 +440,7 @@ with col2:
 with col3:
     st.write(' ')
     
-with st.expander(expanded = True, label = "Possible RNA modification sites:"):
+with st.expander(expanded = True, label = "Potential RNA modification sites:"):
     st.pyplot(plotMods(record))
     if len(high_conf_df_drop) != 0:
         csv_data2 = high_conf_df_drop.to_csv(index=False)
