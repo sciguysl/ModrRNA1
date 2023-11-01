@@ -224,13 +224,13 @@ else:
                 mod_site = int(format_alignment2(*a))
                 accuracy_score = round(align_score*100/(len(seq)*2), 2)
                 try:
-                    if (refseq[mod_site-1] == seq[20] and accuracy_score >= 50):
+                    if (refseq[mod_site-1] == seq[20] and accuracy_score >= 60):
                 #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
                       desc = accuracy_score
                       new_row = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':mod_site, 'ModSite':mod_site, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
                       high_conf_df = pd.concat([new_row,high_conf_df.loc[:]]).reset_index(drop=True)
                 
-                    elif (refseq[align_start+20] == seq[20] and (5 <= accuracy_score < 50)):
+                    elif (refseq[align_start+20] == seq[20] and (5 <= accuracy_score < 60)):
                 #      desc = f" rRNA modification site is detected with an accuracy percentage of {accuracy_score}%\n rRNA modification base is: {refseq[align_start+20]}({align_start+21})\n"
                       desc = accuracy_score
                       new_row2 = pd.DataFrame({'Align':[a],'Desc':desc, 'Score':accuracy_score, 'Start':mod_site, 'ModSite':mod_site, 'Enzyme':enzyme, 'Mod':mod, 'Mod2':mod, 'ID':idnum}, index=[0])
