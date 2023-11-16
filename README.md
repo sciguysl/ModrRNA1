@@ -34,7 +34,7 @@ Putative Enzymes. bioRxiv 2023. [https://doi.org/10.1101/2023.11.01.564906](http
 We thank RMBase, MODOMICS, ESMFold, Streamlit, and all contributors to the databases and libraries used in the development of ModrRNA1. Your work has been instrumental in making this tool possible.
 
 **Figure 1: Workflow Diagram**
-![Workflow Diagram](https://i.ibb.co/3CCNdFM/csd.png)
+![Workflow Diagram](workflow.png)
 
 
 ## Notes
