@@ -46,8 +46,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.markdown("""
         <style>
                .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
+                    padding-top: 0.4rem;
+                    padding-bottom: 1rem;
                     padding-left: 2rem;
                     padding-right: 2rem;
                 }
@@ -452,7 +452,7 @@ with col2:
 with col3:
     st.write(' ')
     
-with st.expander(expanded = True, label = "Potential RNA modification sites:"):
+with st.expander(expanded = True, label = "Potential RNA modification sites (These may or may not be actual modifications that are present):"):
     st.pyplot(plotMods(record))
     if len(high_conf_df_drop) != 0:
         csv_data2 = high_conf_df_drop.to_csv(index=False)
